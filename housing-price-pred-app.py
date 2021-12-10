@@ -1,5 +1,6 @@
 import pandas as pd
-housing = pd.read_csv('housing.csv')
+DATA_URL=('https://raw.githubusercontent.com/ageron/handson-ml/master/datasets/housing/housing.csv')
+housing = pd.read_csv(DATA_URL)
 housing.head()
 
 housing.info()
