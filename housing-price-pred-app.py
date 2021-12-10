@@ -103,3 +103,9 @@ data = housing.iloc[:5]
 labels = housing_labels.iloc[:5]
 data_preparation = full_pipeline.transform(data)
 print("Predictions: ", lin_reg.predict(data_preparation))
+
+import streamlit as st
+
+st.write("""
+# Housing Price Prediction
+""")
