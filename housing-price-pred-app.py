@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 DATA_URL=('https://raw.githubusercontent.com/ageron/handson-ml/master/datasets/housing/housing.csv')
 housing = pd.read_csv(DATA_URL)
 # housing.head()
@@ -104,8 +105,6 @@ data = housing.iloc[:5]
 labels = housing_labels.iloc[:5]
 data_preparation = full_pipeline.transform(data)
 # print("Predictions: ", lin_reg.predict(data_preparation))
-
-import streamlit as st
 
 st.write("""
 # Housing Price Prediction
