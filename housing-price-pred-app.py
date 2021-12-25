@@ -1,119 +1,130 @@
-from sklearn.preprocessing import OneHotEncoder
-import streamlit as st
-from sklearn.linear_model import LinearRegression
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.model_selection import StratifiedShuffleSplit
+# General and EDA
 import numpy as np
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 import pandas as pd
-housing = pd.read_csv(
-    'https://raw.githubusercontent.com/ageron/handson-ml/master/datasets/housing/housing.csv')
-housing.head()
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+import seaborn as sns
 
-housing.info()
+# Preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
-housing.ocean_proximity.value_counts()
+# ML Algorithms
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import AdaBoostRegressor
 
-housing.hist(bins=50, figsize=(10, 8))
-plt.show()
+# Metric
+from sklearn.metrics import mean_absolute_error
 
-train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+# Data
+df = pd.read_csv("../input/california-housing-prices/housing.csv")
+df
 
-housing['income_cat'] = pd.cut(housing['median_income'], bins=[
-                               0., 1.5, 3.0, 4.5, 6., np.inf], labels=[1, 2, 3, 4, 5])
-housing['income_cat'].hist()
-plt.show()
+# EDA
+df.info()
+df.describe()
+df[df['total_bedrooms'].isnull()==True]
+df.dropna(axis=0, inplace=True)
+df.reset_index(drop=True, inplace=True)
+df
 
-split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-for train_index, test_index in split.split(housing, housing["income_cat"]):
-    strat_train_set = housing.loc[train_index]
-    strat_test_set = housing.loc[test_index]
-print(strat_test_set['income_cat'].value_counts() / len(strat_test_set))
+df.info()
+df['median_house_value'].hist()
 
-for set_ in (strat_train_set, strat_test_set):
-    set_.drop('income_cat', axis=1, inplace=True)
-housing = strat_train_set.copy()
+# Binning median_house_value  
+df['housing_category'] = pd.cut(df['median_house_value'], bins=4, labels=['Low', 'Mid', 'High', 'Lavish'])
+df
 
-housing.plot(kind='scatter', x='longitude', y='latitude', alpha=0.4, s=housing['population']/100, label='population',
-             figsize=(12, 8), c='median_house_value', cmap=plt.get_cmap('jet'), colorbar=True)
+plt.figure(figsize=(25,9))
+sns.scatterplot(x='latitude', y='longitude', hue='housing_category', data=df)
+
+# Data fremes for each category og houses
+dflow = df.loc[df['housing_category']=='Low']
+dfmid = df.loc[df['housing_category']=='Mid']
+dfhigh = df.loc[df['housing_category']=='High']
+dflavish = df.loc[df['housing_category']=='Lavish']
+
+plt.figure(figsize=(20,10))
+plt.plot(dflow['latitude'], dflow['longitude'], 'o', label='Low')
+plt.plot(dfmid['latitude'], dfmid['longitude'], 'o', label='Mid')
+plt.plot(dfhigh['latitude'], dfhigh['longitude'], 'o', label='High')
+plt.plot(dflavish['latitude'], dflavish['longitude'], 'ko', label='Lavish')
 plt.legend()
-plt.show()
 
-corr_matrix = housing.corr()
-print(corr_matrix.median_house_value.sort_values(ascending=False))
+plt.figure(figsize=(15,5))
+plt.subplot(121)
+sns.scatterplot(x='latitude', y='median_house_value', hue='housing_category', data=df)
+plt.subplot(122)
+sns.scatterplot(x='longitude', y='median_house_value', hue='housing_category', data=df)
 
-pd.plotting.scatter_matrix(housing.iloc[:, 4:36])
+plt.figure(figsize=(15,15))
+ax = plt.axes(projection='3d')
+ax.scatter3D(dflow['latitude'], dflow['longitude'], dflow['median_house_value'])
+ax.scatter3D(dfmid['latitude'], dfmid['longitude'], dfmid['median_house_value'])
+ax.scatter3D(dfhigh['latitude'], dfhigh['longitude'], dfhigh['median_house_value'])
+ax.scatter3D(dflavish['latitude'], dflavish['longitude'], dflavish['median_house_value'])
+ax.set_xlabel('Latitude')
+ax.set_ylabel('Longitude')
+ax.set_zlabel('Median_house_value')
 
-housing["rooms_per_household"] = housing["total_rooms"]/housing["households"]
-housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
-housing["population_per_household"] = housing["population"] / \
-    housing["households"]
+sample1 = df.loc[(df['latitude']>=34) & (df['latitude']<=34.02)]
+sample1
 
-corr_matrix = housing.corr()
-print(corr_matrix["median_house_value"].sort_values(ascending=False))
+sample1low = sample1.loc[sample1['housing_category']=='Low']
+sample1mid = sample1.loc[sample1['housing_category']=='Mid']
+sample1high = sample1.loc[sample1['housing_category']=='High']
+sample1lavish = sample1.loc[sample1['housing_category']=='Lavish']
 
-# Data Preparation
-housing = strat_train_set.drop("median_house_value", axis=1)
-housing_labels = strat_train_set["median_house_value"].copy()
+plt.figure(figsize=(15,15))
+ax = plt.axes(projection='3d')
+ax.scatter3D(sample1low['latitude'], sample1low['longitude'], sample1low['median_house_value'])
+ax.scatter3D(sample1mid['latitude'], sample1mid['longitude'], sample1mid['median_house_value'])
+ax.scatter3D(sample1high['latitude'], sample1high['longitude'], sample1high['median_house_value'])
+ax.scatter3D(sample1lavish['latitude'], sample1lavish['longitude'], sample1lavish['median_house_value'])
+ax.set_xlabel('Latitude')
+ax.set_ylabel('Longitude')
+ax.set_zlabel('Median_house_value')
 
-median = housing["total_bedrooms"].median()
-housing["total_bedrooms"].fillna(median, inplace=True)
+sns.heatmap(df.corr(), annot=True, cmap='Blues')
 
-housing_num = housing.drop("ocean_proximity", axis=1)
+sns.heatmap(df.corr(method='spearman'), annot=True, cmap='Blues')
 
+sns.heatmap(df.corr(method='kendall'), annot=True, cmap='Blues')
 
-# column index
-rooms_ix, bedrooms_ix, population_ix, households_ix = 3, 4, 5, 6
+# KNN Regressor
+X = df.drop(['median_house_value', 'housing_category', 'ocean_proximity'], axis=1)
+y = df['median_house_value']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+scaler = MinMaxScaler()
+scaler.fit_transform(X_train)
+scaler.fit_transform(X_test)
 
+# Price predictions based on 10 nearest house prices and its other features.
 
-class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
-    def __init__(self, add_bedrooms_per_room=True):  # no *args or **kargs
-        self.add_bedrooms_per_room = add_bedrooms_per_room
+neigh = KNeighborsRegressor(n_neighbors=10, weights='uniform', algorithm='auto', p=1)
+neigh.fit(X_train, y_train)
 
-    def fit(self, X, y=None):
-        return self  # nothing else to do
+y_train_pred = neigh.predict(X_train)
+mean_absolute_error(y_train, y_train_pred)
 
-    def transform(self, X):
-        rooms_per_household = X[:, rooms_ix] / X[:, households_ix]
-        population_per_household = X[:, population_ix] / X[:, households_ix]
-        if self.add_bedrooms_per_room:
-            bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
-            return np.c_[X, rooms_per_household, population_per_household,
-                         bedrooms_per_room]
-        else:
-            return np.c_[X, rooms_per_household, population_per_household]
+y_pred = neigh.predict(X_test)
+mean_absolute_error(y_test, y_pred)
 
+# DecisionTreeRegressor
+regr_1 = DecisionTreeRegressor(max_depth=4)
+regr_1.fit(X_train, y_train)
 
-num_pipeline = Pipeline([
-    ('imputer', SimpleImputer(strategy="median")),
-    ('attribs_adder', CombinedAttributesAdder()),
-    ('std_scaler', StandardScaler()),
-])
-housing_num_tr = num_pipeline.fit_transform(housing_num)
+# Predict
+y_1 = regr_1.predict(X_test)
+mean_absolute_error(y_test, y_1)
 
-num_attribs = list(housing_num)
-cat_attribs = ["ocean_proximity"]
-full_pipeline = ColumnTransformer([
-    ("num", num_pipeline, num_attribs),
-    ("cat", OneHotEncoder(), cat_attribs),
-])
-housing_prepared = full_pipeline.fit_transform(housing)
+# AdaBoostRegressor
+regr_2 = AdaBoostRegressor(
+    DecisionTreeRegressor(max_depth=4), n_estimators=800, random_state=10
+)
+regr_2.fit(X_train, y_train)
 
-lin_reg = LinearRegression()
-lin_reg.fit(housing_prepared, housing_labels)
-
-data = housing.iloc[:5]
-labels = housing_labels.iloc[:5]
-data_preparation = full_pipeline.transform(data)
-print("Predictions: ", lin_reg.predict(data_preparation))
-
-# code for web-app
-
-st.write("""
-# Housing Price Prediction
-""")
+#predict
+y_2 = regr_2.predict(X_test)
+mean_absolute_error(y_test, y_2)
