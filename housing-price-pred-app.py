@@ -17,8 +17,15 @@ from sklearn.ensemble import AdaBoostRegressor
 # Metric
 from sklearn.metrics import mean_absolute_error
 
+# Streamlit
+import streamlit as st
+
+# Web-app title
+st.title("Housing Price Prediction App")
+
 # Data
-df = pd.read_csv("../input/california-housing-prices/housing.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/nabin47/housing-price-prediction-app/main/housing.csv")
+st.header("Dataset: ")
 df
 
 # EDA
@@ -27,14 +34,14 @@ df.describe()
 df[df['total_bedrooms'].isnull()==True]
 df.dropna(axis=0, inplace=True)
 df.reset_index(drop=True, inplace=True)
-df
+df.describe()
 
 df.info()
 df['median_house_value'].hist()
 
 # Binning median_house_value  
 df['housing_category'] = pd.cut(df['median_house_value'], bins=4, labels=['Low', 'Mid', 'High', 'Lavish'])
-df
+df.describe()
 
 plt.figure(figsize=(25,9))
 sns.scatterplot(x='latitude', y='longitude', hue='housing_category', data=df)
@@ -86,11 +93,11 @@ ax.set_xlabel('Latitude')
 ax.set_ylabel('Longitude')
 ax.set_zlabel('Median_house_value')
 
-sns.heatmap(df.corr(), annot=True, cmap='Blues')
+# sns.heatmap(df.corr(), annot=True, cmap='Blues')
 
-sns.heatmap(df.corr(method='spearman'), annot=True, cmap='Blues')
+# sns.heatmap(df.corr(method='spearman'), annot=True, cmap='Blues')
 
-sns.heatmap(df.corr(method='kendall'), annot=True, cmap='Blues')
+# sns.heatmap(df.corr(method='kendall'), annot=True, cmap='Blues')
 
 # KNN Regressor
 X = df.drop(['median_house_value', 'housing_category', 'ocean_proximity'], axis=1)
