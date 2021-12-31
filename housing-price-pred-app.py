@@ -1,9 +1,6 @@
 # General and EDA
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-import seaborn as sns
 
 # Preprocessing
 from sklearn.model_selection import train_test_split
@@ -14,10 +11,6 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import RandomForestRegressor
-
-# Metric
-from sklearn.metrics import mean_absolute_error
-from sklearn import metrics
 
 # Streamlit
 import streamlit as st
