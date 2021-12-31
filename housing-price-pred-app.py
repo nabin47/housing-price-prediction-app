@@ -13,125 +13,126 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 # Metric
 from sklearn.metrics import mean_absolute_error
+from sklearn import metrics
 
 # Streamlit
 import streamlit as st
 
-# Web-app title
-st.title("Housing Price Prediction App")
+st.write("""
+# House Price Prediction App
+This app predicts the **Dhaka House Price**!
+""")
+st.write('---')
 
-# Data
-df = pd.read_csv("https://raw.githubusercontent.com/nabin47/housing-price-prediction-app/main/housing.csv")
-st.header("Dataset: ")
-df
+# Read dataset
+df = pd.read_csv('housing_dataset_bd.csv')
 
-# EDA
-df.info()
-df.describe()
-df[df['total_bedrooms'].isnull()==True]
+# Sidebar
+# Header of Specify Input Parameters
+st.sidebar.header('Specify Input Parameters')
+
+# Drop null values
 df.dropna(axis=0, inplace=True)
+
+# Reset the index after dropping the null values
 df.reset_index(drop=True, inplace=True)
-df.describe()
 
-df.info()
-df['median_house_value'].hist()
+st.header('Geographic View of Model Training Data')
+st.write("""
+This model is trained on House prices in Dhaka
+""")
+st.map(df)
+st.write('---')
 
-# Binning median_house_value  
-df['housing_category'] = pd.cut(df['median_house_value'], bins=4, labels=['Low', 'Mid', 'High', 'Lavish'])
-df.describe()
+# Select features and set target
+X = df.drop(['Price', 'Location', 'Type', 'Region', 'Sub_region'], axis=1)
+y = df['Price']
 
-plt.figure(figsize=(25,9))
-sns.scatterplot(x='latitude', y='longitude', hue='housing_category', data=df)
-
-# Data fremes for each category og houses
-dflow = df.loc[df['housing_category']=='Low']
-dfmid = df.loc[df['housing_category']=='Mid']
-dfhigh = df.loc[df['housing_category']=='High']
-dflavish = df.loc[df['housing_category']=='Lavish']
-
-plt.figure(figsize=(20,10))
-plt.plot(dflow['latitude'], dflow['longitude'], 'o', label='Low')
-plt.plot(dfmid['latitude'], dfmid['longitude'], 'o', label='Mid')
-plt.plot(dfhigh['latitude'], dfhigh['longitude'], 'o', label='High')
-plt.plot(dflavish['latitude'], dflavish['longitude'], 'ko', label='Lavish')
-plt.legend()
-
-plt.figure(figsize=(15,5))
-plt.subplot(121)
-sns.scatterplot(x='latitude', y='median_house_value', hue='housing_category', data=df)
-plt.subplot(122)
-sns.scatterplot(x='longitude', y='median_house_value', hue='housing_category', data=df)
-
-plt.figure(figsize=(15,15))
-ax = plt.axes(projection='3d')
-ax.scatter3D(dflow['latitude'], dflow['longitude'], dflow['median_house_value'])
-ax.scatter3D(dfmid['latitude'], dfmid['longitude'], dfmid['median_house_value'])
-ax.scatter3D(dfhigh['latitude'], dfhigh['longitude'], dfhigh['median_house_value'])
-ax.scatter3D(dflavish['latitude'], dflavish['longitude'], dflavish['median_house_value'])
-ax.set_xlabel('Latitude')
-ax.set_ylabel('Longitude')
-ax.set_zlabel('Median_house_value')
-
-sample1 = df.loc[(df['latitude']>=34) & (df['latitude']<=34.02)]
-sample1
-
-sample1low = sample1.loc[sample1['housing_category']=='Low']
-sample1mid = sample1.loc[sample1['housing_category']=='Mid']
-sample1high = sample1.loc[sample1['housing_category']=='High']
-sample1lavish = sample1.loc[sample1['housing_category']=='Lavish']
-
-plt.figure(figsize=(15,15))
-ax = plt.axes(projection='3d')
-ax.scatter3D(sample1low['latitude'], sample1low['longitude'], sample1low['median_house_value'])
-ax.scatter3D(sample1mid['latitude'], sample1mid['longitude'], sample1mid['median_house_value'])
-ax.scatter3D(sample1high['latitude'], sample1high['longitude'], sample1high['median_house_value'])
-ax.scatter3D(sample1lavish['latitude'], sample1lavish['longitude'], sample1lavish['median_house_value'])
-ax.set_xlabel('Latitude')
-ax.set_ylabel('Longitude')
-ax.set_zlabel('Median_house_value')
-
-# sns.heatmap(df.corr(), annot=True, cmap='Blues')
-
-# sns.heatmap(df.corr(method='spearman'), annot=True, cmap='Blues')
-
-# sns.heatmap(df.corr(method='kendall'), annot=True, cmap='Blues')
-
-# KNN Regressor
-X = df.drop(['median_house_value', 'housing_category', 'ocean_proximity'], axis=1)
-y = df['median_house_value']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+# Scale data in a scale of 0-1
 scaler = MinMaxScaler()
-scaler.fit_transform(X_train)
-scaler.fit_transform(X_test)
+scaler.fit_transform(X)
 
-# Price predictions based on 10 nearest house prices and its other features.
 
-neigh = KNeighborsRegressor(n_neighbors=10, weights='uniform', algorithm='auto', p=1)
-neigh.fit(X_train, y_train)
+# Side bar slider for user input
+def user_input_features():
+    No_Beds = st.sidebar.slider(
+        'No. Beds', int(X.No_Beds.min()), int(X.No_Beds.max()), int(X.No_Beds.mean()))
+    No_Baths = st.sidebar.slider(
+        'No. Baths', int(X.No_Baths.min()), int(X.No_Baths.max()), int(X.No_Baths.mean()))
+    Area = st.sidebar.slider('Area (Sq.ft.)', float(X.Area.min()), float(
+        X.Area.max()), float(X.Area.mean()))
+    latitude = st.sidebar.slider(
+        'Latitude', float(X.latitude.min()), float(X.latitude.max()), float(X.latitude.mean()))
+    longitude = st.sidebar.slider(
+        'Longitude', float(X.longitude.min()), float(X.longitude.max()), float(X.longitude.mean()))
 
-y_train_pred = neigh.predict(X_train)
-mean_absolute_error(y_train, y_train_pred)
+    data = {'No. Beds': No_Beds,
+            'No. Baths': No_Baths,
+            'Area': Area,
+            'Latitude': latitude,
+            'Longitude': longitude}
+    features = pd.DataFrame(data, index=[0])
+    return features
 
-y_pred = neigh.predict(X_test)
-mean_absolute_error(y_test, y_pred)
+
+df_user_ip = user_input_features()
+
+# Main Panel
+
+# Print specified input parameters
+st.header('Specified Input parameters')
+st.write(df_user_ip)
+st.write('---')
+
+
+total_pred = 0
+list_pred = []
+
+# Model
+# KNN Regressor
+neigh = KNeighborsRegressor(
+    n_neighbors=10, weights='uniform', algorithm='auto', p=1)
+neigh.fit(X, y)
+y_pred_1 = neigh.predict(df_user_ip)
+list_pred.append(y_pred_1)
+total_pred += y_pred_1
 
 # DecisionTreeRegressor
-regr_1 = DecisionTreeRegressor(max_depth=4)
-regr_1.fit(X_train, y_train)
-
-# Predict
-y_1 = regr_1.predict(X_test)
-mean_absolute_error(y_test, y_1)
+regr_1 = DecisionTreeRegressor(max_depth=10)
+regr_1.fit(X, y)
+y_pred_2 = regr_1.predict(df_user_ip)
+list_pred.append(y_pred_2)
+total_pred += y_pred_2
 
 # AdaBoostRegressor
 regr_2 = AdaBoostRegressor(
-    DecisionTreeRegressor(max_depth=4), n_estimators=800, random_state=10
-)
-regr_2.fit(X_train, y_train)
+    n_estimators=50, learning_rate=0.3, loss='exponential')
+regr_2.fit(X, y)
+y_pred_3 = regr_2.predict(df_user_ip)
+list_pred.append(y_pred_3)
+total_pred += y_pred_3
 
-#predict
-y_2 = regr_2.predict(X_test)
-mean_absolute_error(y_test, y_2)
+# RandomForestRegressor
+regr_3 = RandomForestRegressor()
+regr_3.fit(X, y)
+y_pred_4 = regr_3.predict(df_user_ip)
+list_pred.append(y_pred_4)
+total_pred += y_pred_4
+
+# Mean price prediction
+mean_pred = total_pred / 4
+
+st.header('Prediction of House Price (BDT)')
+st.write(mean_pred)
+st.write('---')
+
+# Model comparison
+st.header('Model Prediction Comparison')
+st.write('This model uses 4 models- KNeighborsRegressor, DecisionTreeRegressor, AdaBoostRegressor, and RandomForestRegressor')
+df_pred = pd.DataFrame(
+    list_pred, index=['KNN', 'DecisionTree', 'AdaBoost', 'RandomForest'])
+st.bar_chart(df_pred)
